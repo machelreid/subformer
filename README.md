@@ -54,8 +54,8 @@ pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cud
 
 ```bash
 python train.py $DATA_BIN --arch transformer_wmt_en_de \
-    --criterion label_smoothed_length_cross_entropy --label-smoothing 0.1 --lr 5e-4 \
-    --warmup-init-lr 1e-7 --min-lr 1e-9 --lr-scheduler inverse_sqrt --warmup-updates 10000 \
+    --criterion label_smoothed_cross_entropy --label-smoothing 0.1 --lr 5e-4 \
+    --warmup-init-lr 1e-7 --stop-min-lr 1e-9 --lr-scheduler inverse_sqrt --warmup-updates 10000 \
     --optimizer adam --adam-betas '(0.9, 0.999)' --adam-eps 1e-6 --task translation \
     --max-tokens 8192 --weight-decay 0.01 --dropout 0.2 --encoder-layers 6 --encoder-embed-dim 512 \
     --decoder-layers 6 --decoder-embed-dim 512 --fp16 --max-source-positions 10000 \
@@ -75,7 +75,7 @@ fairseq-train $DATA_BIN \
    --max-update 30000 \
    --optimizer adam --adam-betas '(0.9, 0.98)' --skip-invalid-size-inputs-valid-test \
    --lr-scheduler inverse_sqrt --warmup-init-lr 1e-07 --warmup-updates 10000 --lr 0.0005 \
-   --min-lr 1e-09 --clip-norm 0.1 --dropout 0.3 --weight-decay 0.0 \
+   --stop-min-lr 1e-09 --clip-norm 0.1 --dropout 0.3 --weight-decay 0.0 \
    --criterion label_smoothed_cross_entropy --label-smoothing 0.1 --update-freq 7 --attention-dropout 0.2 \
    --max-tokens 8192 --arch transformer_wmt_en_de --seed 1 --warmup-init-lr 1e-7 \
    --source-lang source_bpe --target-lang target_bpe --save-dir $CHECKPOINT_DIR --no-epoch-checkpoints --keep-best-checkpoints 10 --truncate-source --max-source-positions 512 --share-encoder-parameters-sandwich --share-decoder-parameters-sandwich --sandwich-embed-dim 1024 --sandwich-ffn-embed-dim 3072 --reduction-dim 256
