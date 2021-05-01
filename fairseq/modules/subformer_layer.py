@@ -76,16 +76,6 @@ class TransformerEncoderLayerNoArgs(nn.Module):
         self.final_layer_norm = LayerNorm(output_dim)
         self.dimensions_unmatched = self.embed_dim != output_dim
 
-        self.hadamard = nn.ParameterDict(
-            {
-                "ffn_1": nn.Parameter(get_tensor(intermediate_dim)),
-                "ffn_2": nn.Parameter(get_tensor(output_dim)),
-            }
-        )
-        self.hadamard_self_attn = nn.ParameterList(
-            [nn.Parameter(get_tensor(self.embed_dim)) for _ in range(4)]
-        )
-
     def build_fc1(self, input_dim, output_dim, q_noise, qn_block_size):
         return quant_noise(
             nn.Linear(input_dim, output_dim), p=q_noise, block_size=qn_block_size
@@ -153,13 +143,13 @@ class TransformerEncoderLayerNoArgs(nn.Module):
         if self.normalize_before:
             x = self.self_attn_layer_norm(x)
         x, _ = self.self_attn(
-            query=x * self.hadamard_self_attn[0],
-            key=x * self.hadamard_self_attn[1],
-            value=x * self.hadamard_self_attn[2],
+            query=x,
+            key=x,
+            value=x,
             key_padding_mask=encoder_padding_mask,
             attn_mask=attn_mask,
         )
-        x = self.dropout_module(x * self.hadamard_self_attn[3])
+        x = self.dropout_module(x)
         x = residual + x
         if not self.normalize_before:
             x = self.self_attn_layer_norm(x)
@@ -168,7 +158,7 @@ class TransformerEncoderLayerNoArgs(nn.Module):
         if self.normalize_before:
             x = self.final_layer_norm(x)
 
-        x = self.activation_fn(self.fc1(x) * self.hadamard["ffn_1"])
+        x = self.activation_fn(self.fc1(x))
         x = self.activation_dropout_module(x)
         if self.independent_layer_bool:
             x = self.activation_fn(self.fc2(x))
@@ -176,7 +166,7 @@ class TransformerEncoderLayerNoArgs(nn.Module):
             x = self.independent_layer(x)
             x = self.dropout_module(x)
         else:
-            x = self.fc2(x) * self.hadamard["ffn_2"]
+            x = self.fc2(x)
             x = self.dropout_module(x)
         if not self.dimensions_unmatched:
             x = residual + x
@@ -295,18 +285,6 @@ class TransformerDecoderLayerNoArgs(nn.Module):
                     nn.LayerNorm(self.embed_dim),
                 )
         self.onnx_trace = False
-        self.hadamard = nn.ParameterDict(
-            {
-                "ffn_1": nn.Parameter(get_tensor(intermediate_dim)),
-                "ffn_2": nn.Parameter(get_tensor(output_dim)),
-            }
-        )
-        self.hadamard_self_attn = nn.ParameterList(
-            [nn.Parameter(get_tensor(self.embed_dim)) for _ in range(4)]
-        )
-        self.hadamard_encoder_attn = nn.ParameterList(
-            [nn.Parameter(get_tensor(self.embed_dim)) for _ in range(4)]
-        )
 
     def build_fc1(self, input_dim, output_dim, q_noise, qn_block_size):
         return quant_noise(nn.Linear(input_dim, output_dim), q_noise, qn_block_size)
@@ -422,15 +400,15 @@ class TransformerDecoderLayerNoArgs(nn.Module):
             y = x
 
         x, attn = self.self_attn(
-            query=x * self.hadamard_self_attn[0],
-            key=y * self.hadamard_self_attn[1],
-            value=y * self.hadamard_self_attn[2],
+            query=x,
+            key=y,
+            value=y,
             key_padding_mask=self_attn_padding_mask,
             incremental_state=incremental_state,
             need_weights=False,
             attn_mask=self_attn_mask,
         )
-        x = self.dropout_module(x * self.hadamard_self_attn[3])
+        x = self.dropout_module(x)
         x = residual + x
         if not self.normalize_before:
             x = self.self_attn_layer_norm(x)
@@ -453,9 +431,9 @@ class TransformerDecoderLayerNoArgs(nn.Module):
             if self.project_to_encoder is not None:
                 x = self.project_to_encoder(x)
             x, attn = self.encoder_attn(
-                query=x * self.hadamard_encoder_attn[0],
-                key=encoder_out * self.hadamard_encoder_attn[1],
-                value=encoder_out * self.hadamard_encoder_attn[2],
+                query=x,
+                key=encoder_out,
+                value=encoder_out,
                 key_padding_mask=encoder_padding_mask,
                 incremental_state=incremental_state,
                 static_kv=True,
@@ -464,7 +442,7 @@ class TransformerDecoderLayerNoArgs(nn.Module):
             )
             if self.project_from_encoder is not None:
                 x = self.project_from_encoder(x)
-            x = self.dropout_module(x * self.hadamard_encoder_attn[3])
+            x = self.dropout_module(x)
             x = residual + x
             if not self.normalize_before:
                 x = self.encoder_attn_layer_norm(x)
@@ -473,15 +451,15 @@ class TransformerDecoderLayerNoArgs(nn.Module):
         if self.normalize_before:
             x = self.final_layer_norm(x)
 
-        x = self.activation_fn(self.fc1(x) * self.hadamard["ffn_1"])
+        x = self.activation_fn(self.fc1(x))
         x = self.activation_dropout_module(x)
         if self.independent_layer_bool:
-            x = self.activation_fn(self.fc2(x) * self.hadamard["ffn_2"])
+            x = self.activation_fn(self.fc2(x))
             x = self.dropout_module(x)
             x = self.independent_layer(x)
             x = self.dropout_module(x)
         else:
-            x = self.fc2(x) * self.hadamard["ffn_2"]
+            x = self.fc2(x)
             x = self.dropout_module(x)
         if not self.dimensions_unmatched:
             x = residual + x
