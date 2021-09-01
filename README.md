@@ -97,10 +97,13 @@ For post processing and ROUGE calculation feel free to take a look at [this](htt
 Please cite as:
 
 ``` bibtex
-@misc{reid2021subformer,
-  title = {{S}ubformer: {E}xploring {W}eight {S}haring for {P}arameter {E}fficiency in {G}enerative {T}ransformers},
-  author = {Machel Reid and Edison Marrese-Taylor and Yutaka Matsuo},
-  year = {2021},
-  url = {https://machelreid.github.io/resources/subformer.pdf}
+@inproceedings{reid2021subformer,
+    title = {{S}ubformer: {E}xploring {W}eight {S}haring for {P}arameter {E}fficiency in {G}enerative {T}ransformers},
+    author = {Machel Reid and Edison Marrese-Taylor and Yutaka Matsuo},
+    booktitle = "Findings of the Association for Computational Linguistics: EMNLP 2021",
+    month = nov,
+    year = "2021",
+    address = "Punta Cana, Dominican Republic",
+    publisher = "Association for Computational Linguistics",
 }
 ```
